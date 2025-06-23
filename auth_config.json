@@ -1,0 +1,69 @@
+{"users": [
+{
+  "localId": "2UwKJeFQ4VZiFlRp04OYrBsKOl12",
+  "lastSignedInAt": "1750276656952",
+  "createdAt": "1750276656952"
+},
+{
+  "localId": "97vjosX5wXSZYe9gqUDlc1PDDP22",
+  "lastSignedInAt": "1750578810812",
+  "createdAt": "1750578810812"
+},
+{
+  "localId": "BnstsCLcu9g6UxPvg179GJiZUcn2",
+  "lastSignedInAt": "1750329459476",
+  "createdAt": "1750329459476"
+},
+{
+  "localId": "FTlDOZcINGTWMQuAchFkk3E973H2",
+  "lastSignedInAt": "1750201502799",
+  "createdAt": "1750201502799"
+},
+{
+  "localId": "OiRxlKdHmjXhGkYq5Lkuqfjy8LB3",
+  "lastSignedInAt": "1750308509462",
+  "createdAt": "1750308509462"
+},
+{
+  "localId": "RlaVXKg9Ctbg6X8WImyHDCW5EWZ2",
+  "lastSignedInAt": "1750201939087",
+  "createdAt": "1750201939087"
+},
+{
+  "localId": "XR5zDAkMOJR845BBv7E1TJ9G1Eb2",
+  "lastSignedInAt": "1750241560925",
+  "createdAt": "1750241560925"
+},
+{
+  "localId": "dSBxrSUo5pUUVUfKF0jtzXQPJWw2",
+  "email": "yafried100@gmail.com",
+  "emailVerified": true,
+  "displayName": "יעקב פריד",
+  "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocIZKfv1a3TdL3GS0NvI5-_uixumEWATU9ZEl1qznVXGcz_pD8Q=s96-c",
+  "lastSignedInAt": "1750578936807",
+  "createdAt": "1750578936807",
+  "providerUserInfo": [
+    {
+      "providerId": "google.com",
+      "rawId": "101457919799036313162",
+      "email": "yafried100@gmail.com",
+      "displayName": "יעקב פריד",
+      "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocIZKfv1a3TdL3GS0NvI5-_uixumEWATU9ZEl1qznVXGcz_pD8Q=s96-c"
+    }
+  ]
+},
+{
+  "localId": "s5M8z9GYFVVSmP8Nm3tnDgoDAY63",
+  "lastSignedInAt": "1750200455043",
+  "createdAt": "1750200455043"
+},
+{
+  "localId": "tC3fe8193uOZvEhgwuMEGIBbfnp2",
+  "lastSignedInAt": "1750245992793",
+  "createdAt": "1750245992793"
+},
+{
+  "localId": "xu9WJa95iKSsiuGA2gF25Wberr93",
+  "lastSignedInAt": "1750535245724",
+  "createdAt": "1750535245724"
+}]}

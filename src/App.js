@@ -3,7 +3,7 @@ import { onAuthStateChanged, signOut, signInAnonymously } from 'firebase/auth';
 import { setLogLevel, addDoc, setDoc, doc, collection, deleteDoc, getDoc, where } from 'firebase/firestore';
 
 // Components
-import Sidebar from './components/Sidebar';
+import Sidebar, { navItems } from './components/Sidebar';
 import BookingsView from './views/BookingsView';
 import GuestsView from './views/GuestsView';
 import TasksView from './views/TasksView';
@@ -16,6 +16,16 @@ import ChatBoard from './components/ChatBoard';
 import DebugPanel from './components/DebugPanel';
 import Auth from './components/Auth';
 import ConnectionStatus from './components/common/ConnectionStatus';
+import {
+    CalendarIcon,
+    UsersIcon,
+    BellIcon,
+    PackageIcon,
+    DollarSignIcon,
+    WrenchIcon,
+    BarChartIcon,
+    SettingsIcon,
+} from './components/Icons';
 
 // Hooks
 import { useCollection } from './hooks/useCollection';
@@ -26,17 +36,6 @@ import { db } from './firebase/config';
 import { suppressBrowserExtensionErrors, logBrowserExtensionWarning } from './utils/errorUtils';
 import { TaskProvider } from './context/TaskContext';
 
-const navItems = [
-  { id: 'bookings', label: 'הזמנות', icon: '📅' },
-  { id: 'guests', label: 'אורחים', icon: '👥' },
-  { id: 'tasks', label: 'משימות', icon: '✅' },
-  { id: 'inventory', label: 'מלאי', icon: '📦' },
-  { id: 'finances', label: 'כספים', icon: '💰' },
-  { id: 'maintenance', label: 'תחזוקה', icon: '🔧' },
-  { id: 'reports', label: 'דוחות', icon: '📊' },
-  { id: 'settings', label: 'הגדרות', icon: '⚙️' },
-];
-
 export default function App() {
     const [activeView, setActiveView] = useState('bookings');
     const [user, setUser] = useState(null);
@@ -44,6 +43,7 @@ export default function App() {
     const [isAuthReady, setIsAuthReady] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [error, setError] = useState(null);
+    const [currentProjectId, setCurrentProjectId] = useState(null);
 
     // Global error handler for browser extension interference
     useEffect(() => {
@@ -135,6 +135,13 @@ export default function App() {
     const settings = tenant?.settings || null;
     const isFirebaseAvailable = !bookingsError && !guestsError;
 
+    // עדכון הפרויקט הנוכחי כאשר נטען הפרויקט הראשון
+    useEffect(() => {
+        if (bookings && bookings.length > 0 && !currentProjectId) {
+            setCurrentProjectId(bookings[0].id);
+        }
+    }, [bookings, currentProjectId]);
+
     const handleSave = useCallback((collectionName) => async (id, data) => {
         if (!db || !tenantId || typeof tenantId !== 'string') return;
         try {
@@ -182,6 +189,10 @@ export default function App() {
         }
     };
 
+    const handleProjectSelect = (projectId) => {
+        setCurrentProjectId(projectId);
+    };
+
     // Show authentication screen if user is not logged in
     if (!isAuthReady) {
         return (
@@ -221,9 +232,13 @@ export default function App() {
                 return (
                     <BookingsView
                         bookings={bookings}
-                        guests={guests}
+                        loading={bookingsLoading}
+                        error={bookingsError}
                         onSave={handleSave('bookings')}
                         onDelete={handleDelete('bookings')}
+                        settings={settings}
+                        currentProjectId={currentProjectId}
+                        onProjectSelect={handleProjectSelect}
                     />
                 );
             case 'guests':
@@ -346,38 +361,26 @@ export default function App() {
                         {/* Modern Header */}
                         <header className="relative z-20">
                             <div className="absolute inset-0 bg-white/80 backdrop-blur-xl border-b border-white/20 shadow-md"></div>
-                            <div className="relative px-4 md:px-8 py-4 md:py-6 flex justify-between items-center">
-                                <div className="flex items-center gap-4">
-                                    <button
-                                        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                                        className="p-2 rounded-xl bg-white/60 hover:bg-white border border-white/30 text-primary-600 hover:text-primary-800 transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-accent-400"
-                                        aria-label="פתח תפריט צד"
-                                    >
-                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
-                                        </svg>
-                                    </button>
-                                    <div className="flex items-center gap-4">
-                                        <div className="p-3 bg-gradient-to-l from-purple-500 to-blue-400 rounded-2xl text-white shadow-lg flex items-center justify-center">
-                                            <span className="text-2xl">{currentNav?.icon}</span>
-                                        </div>
-                                        <div>
-                                            <h1 className="text-2xl font-bold text-primary-800">
-                                                {currentNav?.label}
-                                            </h1>
-                                            {!isFirebaseAvailable && (
-                                                <div className="flex items-center gap-1 text-sm text-warning-600 mt-1">
-                                                    <span>⚠️</span>
-                                                    <span>מצב אופליין</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div>
-                                </div>
+                            <div className="relative px-4 md:px-8 py-2 flex justify-between items-center">
+                                <button
+                                    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                                    className="p-2 rounded-xl bg-white/60 hover:bg-white border border-white/30 text-primary-600 hover:text-primary-800 transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-accent-400"
+                                    aria-label="פתח תפריט צד"
+                                >
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
+                                    </svg>
+                                </button>
                             </div>
                         </header>
+                        
+                        {/* Offline Status */}
+                        {!isFirebaseAvailable && (
+                            <div className="bg-warning-50 px-4 py-2 flex items-center gap-1 text-sm text-warning-600 border-b border-warning-100">
+                                <span>⚠️</span>
+                                <span>מצב אופליין</span>
+                            </div>
+                        )}
                         
                         {/* Main Content */}
                         <main className="flex-1 overflow-auto p-6 relative">
@@ -390,7 +393,7 @@ export default function App() {
                     {/* Chat Board - Fixed position */}
                     <div className="w-80 shrink-0 p-6 flex flex-col relative">
                         <div className="sticky top-6">
-                            <ChatBoard />
+                            <ChatBoard projectId={currentProjectId} />
                         </div>
                     </div>
                 </div>
