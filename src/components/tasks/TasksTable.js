@@ -26,18 +26,26 @@ export default function TasksTable({ tasks, onEdit, onDelete }) {
                 <thead className="bg-gradient-to-l from-blue-50 to-purple-50">
                     <tr>
                         <th className="px-6 py-3 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">כותרת</th>
-                        <th className="px-6 py-3 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">תיאור</th>
                         <th className="px-6 py-3 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">סטטוס</th>
                         <th className="px-6 py-3 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">עדיפות</th>
                         <th className="px-6 py-3 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">תאריך יעד</th>
+                        <th className="px-6 py-3 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">תזכורת מייל</th>
                         <th className="px-6 py-3 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">פעולות</th>
                     </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100">
                     {tasks.map((task) => (
                         <tr key={task.id} className="hover:bg-blue-50/60 cursor-pointer transition-all" onClick={() => onEdit(task)}>
-                            <td className="px-6 py-4 whitespace-nowrap font-medium text-primary-800">{task.title}</td>
-                            <td className="px-6 py-4 text-primary-700">{task.description}</td>
+                            <td className="px-6 py-4 font-medium text-primary-800">
+                                <div>
+                                    <div className="font-semibold">{task.title}</div>
+                                    {task.description && (
+                                        <div className="text-xs text-primary-600 mt-1 max-w-xs truncate">
+                                            {task.description}
+                                        </div>
+                                    )}
+                                </div>
+                            </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                                 <span className={`inline-flex text-xs leading-5 font-bold rounded-full px-3 py-1 ${getStatusColor(task.status)}`}>
                                     {task.status === 'pending' && 'ממתין'}
@@ -52,7 +60,24 @@ export default function TasksTable({ tasks, onEdit, onDelete }) {
                                     {task.priority === 'low' && 'נמוכה'}
                                 </span>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-primary-700">{task.dueDate}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-primary-700 text-sm">{task.dueDate}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                {task.emailEnabled ? (
+                                    <div className="flex items-center gap-1 text-blue-600">
+                                        <span className="text-xs">📧</span>
+                                        <span className="text-xs font-medium">
+                                            {task.emailTime || '09:00'}
+                                            {task.emailDaysBefore > 0 && (
+                                                <span className="text-blue-500">
+                                                    {' '}(-{task.emailDaysBefore})
+                                                </span>
+                                            )}
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <span className="text-gray-400 text-xs">-</span>
+                                )}
+                            </td>
                             <td className="px-6 py-4 whitespace-nowrap text-left text-sm font-medium">
                                 <button
                                     onClick={e => { e.stopPropagation(); onDelete(task.id); }}

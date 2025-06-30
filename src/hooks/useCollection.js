@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { collection, query, onSnapshot, where, orderBy } from 'firebase/firestore';
+import { useState, useEffect, useMemo } from 'react';
+import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
 import { db } from '../firebase/config';
 
 export const useCollection = (collectionName, queryConstraints = [], orderByField = null) => {
@@ -7,7 +7,17 @@ export const useCollection = (collectionName, queryConstraints = [], orderByFiel
     const [error, setError] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
+    // Memoize query constraints to avoid infinite re-renders
+    const memoizedConstraints = useMemo(() => queryConstraints, [queryConstraints]);
+
     useEffect(() => {
+        if (!collectionName) {
+            setDocuments([]);
+            setIsLoading(false);
+            setError(null);
+            return;
+        }
+
         if (!navigator.onLine) {
             setError('אין חיבור לאינטרנט. המערכת דורשת חיבור פעיל כדי לעבוד.');
             setIsLoading(false);
@@ -19,8 +29,8 @@ export const useCollection = (collectionName, queryConstraints = [], orderByFiel
             let queryRef = query(collectionRef);
 
             // Add query constraints if any
-            if (queryConstraints.length > 0) {
-                queryRef = query(collectionRef, ...queryConstraints);
+            if (memoizedConstraints.length > 0) {
+                queryRef = query(collectionRef, ...memoizedConstraints);
             }
 
             // Add orderBy if specified
@@ -51,7 +61,7 @@ export const useCollection = (collectionName, queryConstraints = [], orderByFiel
             setError(`שגיאה בהגדרת השאילתה. נא לוודא תקינות הפרמטרים.`);
             setIsLoading(false);
         }
-    }, [collectionName, JSON.stringify(queryConstraints), orderByField]);
+    }, [collectionName, memoizedConstraints, orderByField]);
 
     return { documents, error, isLoading };
 }; 

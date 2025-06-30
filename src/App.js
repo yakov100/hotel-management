@@ -13,7 +13,7 @@ import MaintenanceView from './views/MaintenanceView';
 import ReportsView from './views/ReportsView';
 import SettingsView from './views/SettingsView';
 import ChatBoard from './components/ChatBoard';
-import DebugPanel from './components/DebugPanel';
+
 import Auth from './components/Auth';
 import ConnectionStatus from './components/common/ConnectionStatus';
 import {
@@ -96,6 +96,7 @@ export default function App() {
                             id: userId,
                             name: currentUser.displayName || currentUser.email || 'משתמש חדש',
                             email: currentUser.email,
+                            additionalEmails: currentUser.email ? [currentUser.email] : [],
                             createdAt: new Date(),
                             settings: {
                                 hotelName: 'המלון שלי',
@@ -257,6 +258,8 @@ export default function App() {
                         tasks={tasks}
                         onSave={handleSave('tasks')}
                         onDelete={handleDelete('tasks')}
+                        tenantId={tenantId}
+                        tenantInfo={tenant}
                     />
                 );
             case 'inventory':
@@ -398,8 +401,6 @@ export default function App() {
                     </div>
                 </div>
                 
-                {/* Debug Panel - רק במצב פיתוח */}
-                <DebugPanel />
                 <ConnectionStatus />
             </div>
         </TaskProvider>

@@ -1,7 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { db, auth } from '../firebase/config';
 import { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot } from 'firebase/firestore';
-import { MessageCircleIcon } from './Icons';
+import { SendIcon, DocumentIcon } from './Icons';
+import FileUploadFirestore from './FileUploadFirestore';
+
+// File type names for display
+const FILE_TYPE_NAMES = {
+  'image/jpeg': 'תמונה',
+  'image/png': 'תמונה',
+  'image/gif': 'תמונה',
+  'application/pdf': 'PDF',
+  'text/plain': 'טקסט',
+  'application/msword': 'Word',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Word'
+};
 
 export default function ChatBoard({ projectId }) {
   const [messages, setMessages] = useState([]);
@@ -9,6 +21,7 @@ export default function ChatBoard({ projectId }) {
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
+  const [attachments, setAttachments] = useState([]);
   const messagesEndRef = useRef(null);
 
   // Custom data fetching for messages
@@ -49,9 +62,20 @@ export default function ChatBoard({ projectId }) {
     scrollToBottom();
   }, [messages]);
 
+  const handleFileUploaded = (fileInfo) => {
+    // No notifications - just add the attachment silently
+    setAttachments(prev => [...prev, {
+      type: fileInfo.isImage ? 'image' : 'file',
+      url: fileInfo.url,
+      filename: fileInfo.name,
+      size: fileInfo.size,
+      contentType: fileInfo.type
+    }]);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim() || !projectId) return;
+    if ((!newMessage.trim() && attachments.length === 0) || !projectId) return;
 
     setSending(true);
     setError(null);
@@ -62,9 +86,11 @@ export default function ChatBoard({ projectId }) {
         createdAt: serverTimestamp(),
         sender: auth.currentUser.displayName || auth.currentUser.email || 'אנונימי',
         senderId: auth.currentUser.uid,
-        projectId
+        projectId,
+        attachments: attachments
       });
       setNewMessage('');
+      setAttachments([]);
     } catch (error) {
       console.error('Error sending message:', error);
       setError('שגיאה בשליחת ההודעה. נא לוודא חיבור לאינטרנט');
@@ -73,13 +99,50 @@ export default function ChatBoard({ projectId }) {
     }
   };
 
+  const renderAttachment = (attachment, isCurrentUser) => {
+    if (attachment.type === 'image') {
+      return (
+        <div className="mt-1.5 rounded-xl overflow-hidden max-w-xs">
+          <img 
+            src={attachment.url} 
+            alt={attachment.filename}
+            className="w-full h-auto max-h-48 object-cover"
+          />
+        </div>
+      );
+    }
+    
+    return (
+      <a 
+        href={attachment.url} 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className={`flex items-center gap-2 mt-1.5 p-2 rounded-lg transition-colors max-w-xs ${
+          isCurrentUser 
+            ? 'bg-white bg-opacity-20 hover:bg-opacity-30' 
+            : 'bg-gray-100 hover:bg-gray-200'
+        }`}
+      >
+        <DocumentIcon className={`w-4 h-4 ${isCurrentUser ? 'text-white' : 'text-gray-600'}`} />
+        <div className="flex-1 min-w-0">
+          <div className={`text-xs font-medium truncate ${isCurrentUser ? 'text-white' : 'text-gray-800'}`}>
+            {attachment.filename}
+          </div>
+          <div className={`text-xs ${isCurrentUser ? 'text-white text-opacity-70' : 'text-gray-500'}`}>
+            {(attachment.size / 1024).toFixed(1)}KB
+          </div>
+        </div>
+      </a>
+    );
+  };
+
   if (loading) {
     return (
-      <div className="modern-card p-6 animate-pulse">
-        <div className="h-6 bg-primary-200 rounded-lg mb-4"></div>
-        <div className="space-y-3">
-          <div className="h-20 bg-primary-100 rounded-lg"></div>
-          <div className="h-20 bg-primary-100 rounded-lg"></div>
+      <div className="flex-1 bg-gray-50 p-4 animate-pulse">
+        <div className="space-y-2">
+          <div className="h-8 bg-gray-200 rounded-2xl w-2/3"></div>
+          <div className="h-8 bg-blue-200 rounded-2xl w-1/2 ml-auto"></div>
+          <div className="h-8 bg-gray-200 rounded-2xl w-3/5"></div>
         </div>
       </div>
     );
@@ -87,51 +150,44 @@ export default function ChatBoard({ projectId }) {
 
   if (!projectId) {
     return (
-      <div className="modern-card p-6">
-        <div className="text-center py-12">
-          <div className="w-16 h-16 bg-red-100 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-            <MessageCircleIcon className="w-8 h-8 text-red-600" />
-          </div>
-          <p className="text-red-600 font-medium">לא נמצא מזהה פרויקט</p>
-          <p className="text-red-400 text-sm mt-1">אנא בחר פרויקט כדי להציג את הצ'אט</p>
+      <div className="flex-1 bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-500">בחר פרויקט כדי להתחיל לשוחח</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="modern-card p-6 max-h-[80vh] flex flex-col animate-slide-up" dir="rtl">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6 pb-4 border-b border-primary-100">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-gradient-primary rounded-xl">
-            <MessageCircleIcon className="w-5 h-5 text-white" />
-          </div>
+    <div className="flex-1 flex flex-col bg-gray-50" dir="rtl" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
+      {/* Clean header */}
+      <div className="bg-white border-b border-gray-100 px-4 py-3">
+        <div className="flex items-center">
           <div>
-            <h2 className="text-lg font-bold text-primary-800">צ'אט מנהלים</h2>
-            <p className="text-sm text-primary-600">
+            <h2 className="font-medium text-gray-900 text-base">צ'אט צוות</h2>
+            <p className="text-xs text-gray-500">
               {messages?.length || 0} הודעות
             </p>
           </div>
         </div>
       </div>
 
-      {/* Error Message */}
+      {/* Error Messages */}
       {error && (
-        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+        <div className="mx-4 mt-3 p-2 bg-red-50 text-red-600 rounded-lg text-xs">
           {error}
         </div>
       )}
 
-      {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto mb-4 space-y-4">
+      {/* Messages Container - Inspired by your example */}
+      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1.5">
         {(!messages || messages.length === 0) && (
-          <div className="text-center py-12 animate-fade-in">
-            <div className="w-16 h-16 bg-gradient-to-br from-primary-100 to-primary-200 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-              <MessageCircleIcon className="w-8 h-8 text-primary-600" />
+          <div className="text-center py-8">
+            <div className="w-12 h-12 bg-gray-200 rounded-full mx-auto mb-3 flex items-center justify-center">
+              <span className="text-lg">💬</span>
             </div>
-            <p className="text-primary-600 font-medium">אין הודעות עדיין</p>
-            <p className="text-primary-400 text-sm mt-1">התחל שיחה חדשה</p>
+            <p className="text-gray-500 text-sm">אין הודעות עדיין</p>
+            <p className="text-gray-400 text-xs mt-1">התחל שיחה עם הצוות</p>
           </div>
         )}
 
@@ -141,30 +197,46 @@ export default function ChatBoard({ projectId }) {
           return (
             <div
               key={message.id}
-              className={`flex ${isCurrentUser ? 'justify-start' : 'justify-end'} animate-fade-in`}
+              className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
             >
-              <div 
-                className={`message-bubble max-w-[75%] ${isCurrentUser ? 'ml-auto' : 'mr-auto'}`}
-              >
-                <div className={`p-3 rounded-lg ${
-                  isCurrentUser 
-                    ? 'bg-blue-500 text-white rounded-br-none' 
-                    : 'bg-gray-100 text-gray-800 rounded-bl-none'
-                }`}>
-                  <div className="flex flex-col gap-1">
-                    <span className={`text-sm ${
-                      isCurrentUser ? 'text-blue-100' : 'text-gray-500'
-                    }`}>
+              <div className={`max-w-[70%] ${isCurrentUser ? 'ml-auto' : 'mr-auto'}`}>
+                {/* Clean message bubble like your example */}
+                <div 
+                  className={`inline-block px-3 py-2 rounded-2xl ${
+                    isCurrentUser 
+                      ? 'bg-blue-500 text-white rounded-br-md shadow-sm' 
+                      : 'bg-white text-gray-800 rounded-bl-md shadow-sm border border-gray-100'
+                  }`}
+                >
+                  {/* Sender name - only for other users, smaller */}
+                  {!isCurrentUser && (
+                    <div className="text-xs font-medium text-blue-500 mb-0.5">
                       {message.sender}
-                    </span>
-                    <p className="break-words">
+                    </div>
+                  )}
+                  
+                  {/* Message content with better typography */}
+                  {message.content && (
+                    <div className="break-words text-sm leading-relaxed font-normal">
                       {message.content}
-                    </p>
-                    <span className={`text-xs ${
-                      isCurrentUser ? 'text-blue-200' : 'text-gray-400'
-                    } self-end`}>
-                      {message.createdAt?.toDate().toLocaleTimeString('he-IL')}
-                    </span>
+                    </div>
+                  )}
+                  
+                  {/* Attachments */}
+                  {message.attachments?.map((attachment, index) => (
+                    <div key={index}>
+                      {renderAttachment(attachment, isCurrentUser)}
+                    </div>
+                  ))}
+                  
+                  {/* Time stamp - smaller and more subtle */}
+                  <div className={`text-xs mt-0.5 text-left ${
+                    isCurrentUser ? 'text-blue-100' : 'text-gray-400'
+                  }`}>
+                    {message.createdAt?.toDate().toLocaleTimeString('he-IL', {
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
                   </div>
                 </div>
               </div>
@@ -174,34 +246,97 @@ export default function ChatBoard({ projectId }) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Message Input */}
-      <form onSubmit={handleSubmit} className="mt-auto">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="הקלד הודעה..."
-            className="modern-input flex-1"
-            disabled={sending}
-          />
-          <button
-            type="submit"
-            disabled={sending || !newMessage.trim()}
-            className="btn-primary px-6"
-          >
-            שלח
-          </button>
-        </div>
-      </form>
-
-      {/* Loading State */}
-      {sending && (
-        <div className="flex items-center justify-center gap-2 mt-4 p-3 bg-white/50 backdrop-blur-sm rounded-xl border border-white/30 animate-fade-in">
-          <div className="w-4 h-4 border-2 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-primary-600 text-sm font-medium">שולח הודעה...</span>
+      {/* Attachments Preview - only show if exists, smaller */}
+      {attachments.length > 0 && (
+        <div className="mx-4 mb-3 bg-white rounded-lg border border-gray-100 p-2">
+          <div className="text-xs font-medium text-gray-600 mb-2">
+            קבצים מצורפים ({attachments.length})
+          </div>
+          <div className="space-y-1">
+            {attachments.map((attachment, index) => (
+              <div key={index} className="relative">
+                {attachment.type === 'image' ? (
+                  <div className="relative">
+                    <img 
+                      src={attachment.url} 
+                      alt={attachment.filename}
+                      className="h-12 w-12 object-cover rounded"
+                    />
+                    <button
+                      onClick={() => setAttachments(prev => prev.filter((_, i) => i !== index))}
+                      className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 p-1.5 bg-gray-50 rounded">
+                    <DocumentIcon className="w-4 h-4 text-gray-600" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs truncate">{attachment.filename}</div>
+                      <div className="text-xs text-gray-500">
+                        {(attachment.size / 1024).toFixed(1)}KB
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setAttachments(prev => prev.filter((_, i) => i !== index))}
+                      className="w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
+
+      {/* Oval frame like your example */}
+      <div className="bg-white border-t border-gray-100 px-4 py-4">
+        {/* Single oval frame with side icons like your drawing */}
+        <div className="bg-white rounded-full border-2 border-gray-300 focus-within:border-blue-400 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center px-4 py-3">
+          
+          {/* Left side icon circle - File upload (+) */}
+          <div className="flex items-center gap-3">
+            <FileUploadFirestore 
+              onFileUploaded={handleFileUploaded}
+              projectId={projectId}
+              disabled={sending}
+              minimal={true}
+            />
+          </div>
+          
+          {/* Center input field with form wrapper */}
+          <form onSubmit={handleSubmit} className="flex-1 flex items-center">
+            <input
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder="הקלד הודעה..."
+              className="flex-1 bg-transparent border-0 focus:ring-0 text-gray-800 placeholder-gray-400 text-base font-normal outline-none mx-4"
+              disabled={sending}
+            />
+            
+            {/* Right side icon circle - Send button (plane) */}
+            <button
+              type="submit"
+              disabled={sending || (!newMessage.trim() && attachments.length === 0)}
+              className={`w-10 h-10 rounded-full transition-all duration-300 flex items-center justify-center ${
+                sending || (!newMessage.trim() && attachments.length === 0)
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-blue-500 text-white hover:bg-blue-600 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95'
+              }`}
+            >
+              {sending ? (
+                <span>⏳</span>
+              ) : (
+                <SendIcon className="w-5 h-5" />
+              )}
+            </button>
+          </form>
+        </div>
+      </div>
     </div>
   );
 } 

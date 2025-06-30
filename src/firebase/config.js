@@ -3,6 +3,7 @@ import { getFirestore, collection, getDocs, query, limit, enableIndexedDbPersist
 import { getFunctions } from 'firebase/functions';
 import { getAuth, connectAuthEmulator, GoogleAuthProvider } from 'firebase/auth';
 import { getAnalytics } from 'firebase/analytics';
+import { getStorage } from 'firebase/storage';
 
 // Firebase configuration from mcp-config.json
 const firebaseConfig = {
@@ -17,7 +18,7 @@ const firebaseConfig = {
 
 console.log('Initializing Firebase app with projectId:', firebaseConfig.projectId);
 
-let app, db, functions, auth, analytics, googleProvider;
+let app, db, functions, auth, analytics, googleProvider, storage;
 
 // Function to test Firebase connection
 export async function testFirebaseConnection() {
@@ -64,6 +65,10 @@ try {
     // Initialize other services
     db = getFirestore(app);
     functions = getFunctions(app);
+    storage = getStorage(app);
+    
+    // Configure Storage with proper CORS settings
+    console.log('✅ Storage initialized with bucket:', storage.app.options.storageBucket);
     
     // Test connection immediately
     testFirebaseConnection().then(result => {
@@ -89,5 +94,5 @@ try {
     throw error;
 }
 
-export { db, functions, auth, analytics, googleProvider };
+export { db, functions, auth, analytics, googleProvider, storage };
 export default firebaseConfig; 

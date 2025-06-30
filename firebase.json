@@ -13,6 +13,10 @@
       }
     ]
   },
+  "storage": {
+    "rules": "storage.rules",
+    "cors": "cors.json"
+  },
   "functions": [
     {
       "source": "functions",
@@ -25,5 +29,13 @@
         "*.local"
       ]
     }
-  ]
+  ],
+  "emulators": {
+    "storage": {
+      "port": 9199
+    },
+    "ui": {
+      "enabled": true
+    }
+  }
 }

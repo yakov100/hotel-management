@@ -48,10 +48,13 @@ export const logBrowserExtensionWarning = () => {
    - "message channel closed"
    - "listener indicated an asynchronous response"
    
-   זה לא משפיע על פעולת האפליקציה.
+   זה לא משפיע על פעולת האפליקציה - המערכת פועלת כרגיל!
+   
    אם אתה רוצה להפסיק את ההודעות האלה, נסה:
-   1. לפתוח חלון פרטי (Incognito)
+   1. לפתוח חלון פרטי (Incognito/Private)
    2. לכבות תוספים זמנית
    3. להשתמש בדפדפן אחר
+   
+   ⚠️ השגיאה שראית היא נפוצה ולא משפיעה על תזמון המיילים!
 `);
 }; 

@@ -13,6 +13,9 @@ const nodemailer = require("nodemailer");
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { onCall } = require("firebase-functions/v2/https");
 
+// Import email scheduler functions
+const emailScheduler = require('./emailScheduler');
+
 // Create and deploy your first functions
 // https://firebase.google.com/docs/functions/get-started
 
@@ -21,7 +24,10 @@ const { onCall } = require("firebase-functions/v2/https");
 //   response.send("Hello from Firebase!");
 // });
 
-admin.initializeApp();
+// Initialize Firebase Admin SDK - check if already initialized
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
 
 const gmailEmail = "yafried100@gmail.com";
 const gmailPassword = "ceyb mpae pnrw xakw"; // הכנס כאן את סיסמת האפליקציה של Gmail
@@ -389,3 +395,10 @@ ${new Date().toLocaleDateString('he-IL')}`
     throw new functions.https.HttpsError('internal', `שגיאה בשליחת המייל: ${error.message}`);
   }
 });
+
+// Export email scheduler functions
+exports.scheduleEmail = emailScheduler.scheduleEmail;
+exports.sendEmail = emailScheduler.sendEmail;
+exports.cancelScheduledEmail = emailScheduler.cancelScheduledEmail;
+exports.processScheduledEmails = emailScheduler.processScheduledEmails;
+exports.cleanupOldEmails = emailScheduler.cleanupOldEmails;

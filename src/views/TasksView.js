@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { PlusCircleIcon, BellIcon } from '../components/Icons';
 import Button from '../components/common/Button';
 import Modal from '../components/common/Modal';
 import TaskForm from '../components/tasks/TaskForm';
 import TasksTable from '../components/tasks/TasksTable';
-import { exportToCSV, exportToExcel, mapTasksForExport } from '../utils/exportUtils';
+import RemindersBoard from '../components/RemindersBoard';
+// import { exportToCSV, exportToExcel, mapTasksForExport } from '../utils/exportUtils';
 import { useTaskContext } from '../context/TaskContext';
 
-export default function TasksView() {
+export default function TasksView({ tenantId, tenantInfo }) {
     const { tasks, loading, error, addTask, updateTask, deleteTask } = useTaskContext();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState(null);
@@ -36,23 +37,23 @@ export default function TasksView() {
         }
     };
 
-    const getPriorityColor = (priority) => {
-        switch (priority) {
-            case 'high': return 'text-red-600';
-            case 'medium': return 'text-yellow-600';
-            case 'low': return 'text-green-600';
-            default: return 'text-gray-600';
-        }
-    };
+    // const getPriorityColor = (priority) => {
+    //     switch (priority) {
+    //         case 'high': return 'text-red-600';
+    //         case 'medium': return 'text-yellow-600';
+    //         case 'low': return 'text-green-600';
+    //         default: return 'text-gray-600';
+    //     }
+    // };
 
-    const getStatusColor = (status) => {
-        switch (status) {
-            case 'completed': return 'bg-green-100 text-green-800';
-            case 'in_progress': return 'bg-blue-100 text-blue-800';
-            case 'pending': return 'bg-yellow-100 text-yellow-800';
-            default: return 'bg-gray-100 text-gray-800';
-        }
-    };
+    // const getStatusColor = (status) => {
+    //     switch (status) {
+    //         case 'completed': return 'bg-green-100 text-green-800';
+    //         case 'in_progress': return 'bg-blue-100 text-blue-800';
+    //         case 'pending': return 'bg-yellow-100 text-yellow-800';
+    //         default: return 'bg-gray-100 text-gray-800';
+    //     }
+    // };
 
     if (loading) {
         return (
@@ -89,7 +90,7 @@ export default function TasksView() {
                     <div className="p-3 bg-gradient-to-l from-purple-500 to-blue-400 rounded-2xl text-white shadow-lg flex items-center justify-center">
                         <span className="text-2xl"><BellIcon /></span>
                     </div>
-                    <h2 className="text-xl font-bold text-primary-900">ניהול משימות</h2>
+                    <h2 className="text-xl font-bold text-primary-900">משימות ותזכורות</h2>
                 </div>
                 <Button
                     onClick={handleAdd}
@@ -101,12 +102,33 @@ export default function TasksView() {
                 </Button>
             </div>
 
-            <div className="modern-card overflow-hidden">
-                <TasksTable
-                    tasks={tasks}
-                    onEdit={handleEdit}
-                    onDelete={deleteTask}
-                />
+            {/* שילוב משימות ותזכורות בשני חצאים */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+                {/* חלק המשימות - 2/3 מהרוחב */}
+                <div className="lg:col-span-2">
+                    <div className="modern-card overflow-hidden h-full">
+                        <div className="p-4 border-b border-primary-100 bg-gradient-to-r from-primary-50 to-accent-50">
+                            <h3 className="text-lg font-semibold text-primary-800">רשימת משימות</h3>
+                            <p className="text-sm text-primary-600">{tasks?.length || 0} משימות פעילות</p>
+                        </div>
+                        <div className="p-4">
+                            <TasksTable
+                                tasks={tasks}
+                                onEdit={handleEdit}
+                                onDelete={deleteTask}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* חלק התזכורות - 1/3 מהרוחב */}
+                <div className="lg:col-span-1">
+                    <div className="modern-card h-full">
+                        <div className="p-4 h-full">
+                            <RemindersBoard tenantId={tenantId} tenantInfo={tenantInfo} />
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <Modal isOpen={isModalOpen} onClose={() => {

@@ -6,7 +6,7 @@ export default function SettingsView({ settings = {}, tenant = {}, onSave }) {
         address: tenant.address || settings.address || '',
         phone: tenant.phone || settings.phone || '',
         email: tenant.email || settings.email || '',
-        additionalEmails: settings.additionalEmails || ['sb0534135898@gmail.com'],
+        additionalEmails: (settings.additionalEmails || []).filter(email => email !== 'sb0534135898@gmail.com'),
         checkInTime: settings.checkInTime || '15:00',
         checkOutTime: settings.checkOutTime || '11:00',
         currency: settings.currency || 'ILS',
