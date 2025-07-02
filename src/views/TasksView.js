@@ -8,7 +8,7 @@ import RemindersBoard from '../components/RemindersBoard';
 // import { exportToCSV, exportToExcel, mapTasksForExport } from '../utils/exportUtils';
 import { useTaskContext } from '../context/TaskContext';
 
-export default function TasksView({ tenantId, tenantInfo }) {
+export default function TasksView({ apartmentId, apartmentInfo }) {
     const { tasks, loading, error, addTask, updateTask, deleteTask } = useTaskContext();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState(null);
@@ -106,7 +106,7 @@ export default function TasksView({ tenantId, tenantInfo }) {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
                 {/* חלק המשימות - 2/3 מהרוחב */}
                 <div className="lg:col-span-2">
-                    <div className="modern-card overflow-hidden h-full">
+                    <div className="modern-card overflow-auto h-full">
                         <div className="p-4 border-b border-primary-100 bg-gradient-to-r from-primary-50 to-accent-50">
                             <h3 className="text-lg font-semibold text-primary-800">רשימת משימות</h3>
                             <p className="text-sm text-primary-600">{tasks?.length || 0} משימות פעילות</p>
@@ -125,7 +125,7 @@ export default function TasksView({ tenantId, tenantInfo }) {
                 <div className="lg:col-span-1">
                     <div className="modern-card h-full">
                         <div className="p-4 h-full">
-                            <RemindersBoard tenantId={tenantId} tenantInfo={tenantInfo} />
+                            <RemindersBoard apartmentId={apartmentId} apartmentInfo={apartmentInfo} />
                         </div>
                     </div>
                 </div>

@@ -109,7 +109,7 @@ export default function BookingsCalendar({ bookings, onEdit, onDelete, onDateCli
                             key={day.toString()}
                             onClick={() => onDateClick(day)}
                             className={`
-                                relative min-h-[100px] p-2 rounded-2xl transition-all duration-200 cursor-pointer flex flex-col
+                                relative min-h-[120px] p-2 rounded-2xl transition-all duration-200 cursor-pointer flex flex-col
                                 ${isCurrentMonth ? 'bg-white/90 backdrop-blur-sm' : 'bg-gray-100/60'}
                                 ${isCurrentDay ? 'border-2 border-accent-500/50 shadow-lg shadow-accent-200/50' : 'border border-primary-100/30'}
                                 hover:bg-gradient-to-br hover:from-white hover:to-accent-50 hover:shadow-xl hover:scale-[1.02]
@@ -126,21 +126,19 @@ export default function BookingsCalendar({ bookings, onEdit, onDelete, onDateCli
                                 </span>
                             </div>
                             {/* Bookings */}
-                            <div className="space-y-2 relative z-10">
+                            <div className="space-y-2 relative z-10 flex flex-col items-center">
                                 {dayBookings.map(booking => (
                                     <div
                                         key={booking.id}
                                         onClick={(e) => handleBookingClick(booking, e)}
                                         className={`
-                                            text-xs font-bold p-2 rounded-xl text-white cursor-pointer 
-                                            hover:opacity-90 transition-all shadow-lg border border-white/30 
-                                            flex items-center gap-2 backdrop-blur-sm
+                                            text-[10px] font-medium py-1.5 px-1 rounded text-white cursor-pointer 
+                                            hover:opacity-90 transition-all shadow-sm backdrop-blur-sm mx-auto
                                             ${getGuestColor(booking.guestName)}
                                         `}
-                                        style={{ minWidth: 0 }}
+                                        style={{ minWidth: 0, maxWidth: '120px' }}
                                     >
-                                        <span className="truncate" style={{ direction: 'rtl', maxWidth: '90px' }}>{booking.guestName}</span>
-                                        <span className="w-2 h-2 bg-white rounded-full ml-1 shadow-inner"></span>
+                                        <span className="truncate block text-center mx-auto" style={{ direction: 'rtl' }}>{booking.guestName}</span>
                                     </div>
                                 ))}
                             </div>

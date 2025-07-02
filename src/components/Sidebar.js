@@ -18,10 +18,11 @@ export const navItems = [
     { id: 'finances', label: 'הכנסות והוצאות', icon: <DollarSignIcon />, color: 'text-emerald-400' },
     { id: 'maintenance', label: 'ניקיון ותחזוקה', icon: <WrenchIcon />, color: 'text-orange-400' },
     { id: 'reports', label: 'דוחות', icon: <BarChartIcon />, color: 'text-pink-400' },
+    { id: 'users', label: 'ניהול משתמשים', icon: <UsersIcon />, color: 'text-blue-400', requiresManager: true },
     { id: 'settings', label: 'הגדרות', icon: <SettingsIcon />, color: 'text-slate-400' },
 ];
 
-export default function Sidebar({ activeView, setActiveView, isOpen, setIsOpen, userId, tenant, onLogout, onNewBooking, onExportExcel, onExportCSV }) {
+export default function Sidebar({ activeView, setActiveView, isOpen, setIsOpen, userId, tenant, onLogout, onNewBooking, onExportExcel, onExportCSV, isManager, isOwner }) {
     return (
         <div className="h-full flex flex-col overflow-hidden" dir="rtl">
             {/* Header - Fixed */}
@@ -93,7 +94,13 @@ export default function Sidebar({ activeView, setActiveView, isOpen, setIsOpen, 
                     </div>
                 )}
 
-                {navItems.map((item, index) => (
+                {navItems.filter(item => {
+                    // Filter out items that require manager/owner permissions
+                    if (item.requiresManager && !isManager && !isOwner) {
+                        return false;
+                    }
+                    return true;
+                }).map((item, index) => (
                     <div
                         key={item.id}
                         className="animate-slide-up"

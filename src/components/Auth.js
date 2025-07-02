@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { signInWithPopup, GoogleAuthProvider, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import React, { useState } from 'react';
+import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import { auth, db } from '../firebase/config';
 import { doc, setDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { isBrowserExtensionError } from '../utils/errorUtils';
+import AuthForm from './auth/AuthForm';
+import GoogleAuthButton from './auth/GoogleAuthButton';
 
 const Auth = ({ onAuthSuccess }) => {
     const [loading, setLoading] = useState(false);
@@ -10,26 +12,40 @@ const Auth = ({ onAuthSuccess }) => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [isRegister, setIsRegister] = useState(false);
+    const [authMode, setAuthMode] = useState('google'); // 'google' or 'email'
 
     // המרת שם משתמש לאימייל
     const usernameToEmail = (username) => {
         return `${username}@hotel-manager.com`.toLowerCase();
     };
 
-    const createTenantProfile = async (uid, email, username, photoURL) => {
+    const createUserProfile = async (uid, email, username, displayName, photoURL) => {
         try {
             const userRef = doc(db, 'users', uid);
+            
+            // Check if user already exists
+            const existingUser = await getDoc(userRef);
+            if (existingUser.exists()) {
+                // Update last login only
+                await setDoc(userRef, {
+                    lastLogin: new Date()
+                }, { merge: true });
+                return true;
+            }
+            
+            // Create new user
             await setDoc(userRef, {
                 email,
-                username,
-                photoURL,
-                createdAt: new Date().toISOString(),
-                lastLogin: new Date().toISOString(),
-                role: 'user'
+                username: username || displayName || email?.split('@')[0],
+                displayName: displayName || username || email?.split('@')[0],
+                photoURL: photoURL || '',
+                apartments: {}, // Will be populated when user creates or joins apartments
+                createdAt: new Date(),
+                lastLogin: new Date()
             });
             return true;
         } catch (error) {
-            console.error('Error creating tenant profile:', error);
+            console.error('Error creating user profile:', error);
             throw error;
         }
     };
@@ -55,11 +71,12 @@ const Auth = ({ onAuthSuccess }) => {
             
             if (result.user) {
                 console.log('Google sign-in successful:', result.user);
-                await createTenantProfile(
+                await createUserProfile(
                     result.user.uid,
                     result.user.email,
+                    null,
                     result.user.displayName,
-                    ''
+                    result.user.photoURL
                 );
                 onAuthSuccess?.(result.user);
             }
@@ -110,33 +127,42 @@ const Auth = ({ onAuthSuccess }) => {
             let userCredential;
             
             if (isRegister) {
-                // בדיקה אם המשתמש קיים בקולקציית users רק אם מנסים להירשם
-                const usersRef = collection(db, 'users');
-                const q = query(usersRef, where('username', '==', username));
-                const querySnapshot = await getDocs(q);
-                
-                if (!querySnapshot.empty) {
-                    setError('שם המשתמש כבר תפוס');
-                    setLoading(false);
-                    return;
-                }
-
+                // יצירת משתמש חדש - Firebase יטפל ברמת המערכת בבדיקת ייחודיות האימייל
                 userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                // צור פרופיל tenant חדש
-                await createTenantProfile(
-                    userCredential.user.uid,
-                    email,
-                    username,
-                    ''
-                );
+                
+                // צור פרופיל משתמש חדש אחרי שהמשתמש מחובר
+                try {
+                    await createUserProfile(
+                        userCredential.user.uid,
+                        email,
+                        username,
+                        username,
+                        ''
+                    );
+                } catch (profileError) {
+                    console.warn('Profile creation failed, but user was created:', profileError);
+                    // אל תמנע מהמשתמש להתחבר אם יצירת הפרופיל נכשלה
+                }
             } else {
                 userCredential = await signInWithEmailAndPassword(auth, email, password);
             }
             
             onAuthSuccess?.(userCredential.user);
         } catch (error) {
+            // Ignore browser extension interference
+            if (isBrowserExtensionError(error)) {
+                console.warn('🔌 Browser extension interference in email auth, ignoring:', error.message);
+                return;
+            }
+            
             console.error('Auth error:', error);
-            setError(getErrorMessage(error.code));
+            
+            // Handle Firebase permission errors specifically
+            if (error.message && error.message.includes('Missing or insufficient permissions')) {
+                setError('רענן את הדף ונסה שוב. אם הבעיה נמשכת, נסה חלון פרטי');
+            } else {
+                setError(getErrorMessage(error.code));
+            }
         } finally {
             setLoading(false);
         }
@@ -183,14 +209,18 @@ const Auth = ({ onAuthSuccess }) => {
             case 'auth/user-not-found':
                 return 'משתמש לא נמצא. בדוק את שם המשתמש או הירשם';
             case 'auth/wrong-password':
-                return 'סיסמה שגויה. נסה שוב';
+                return 'סיסמה שגויה';
             case 'auth/too-many-requests':
-                return 'יותר מדי ניסיונות כניסה. נסה שוב מאוחר יותר';
-            case 'auth/invalid-credential':
-                return 'פרטי ההתחברות שגויים. נסה שוב';
+                return 'יותר מדי ניסיונות התחברות. נסה שוב מאוחר יותר';
+            case 'auth/user-disabled':
+                return 'החשבון הושבת. אנא פנה למנהל המערכת';
+            case 'auth/requires-recent-login':
+                return 'יש צורך בהתחברות מחדש לביצוע פעולה זו';
+            case 'permission-denied':
+            case 'missing-permissions':
+                return 'רענן את הדף ונסה שוב. אם הבעיה נמשכת, נסה חלון פרטי';
             default:
-                console.error('Unhandled auth error:', errorCode);
-                return 'שגיאה בהתחברות. נסה שוב מאוחר יותר';
+                return 'שגיאה בהתחברות. נסה שוב';
         }
     };
 
@@ -230,77 +260,29 @@ const Auth = ({ onAuthSuccess }) => {
         );
     }
 
-    // אם המשתמש לא מחובר, נציג טופס אימייל/סיסמה + כפתור Google
+    if (authMode === 'google') {
+        return (
+            <GoogleAuthButton 
+                onGoogleAuth={handleGoogleAuth}
+                loading={loading}
+                onSwitchToEmail={() => setAuthMode('email')}
+            />
+        );
+    }
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-            <div className="max-w-md w-full">
-                <div className="bg-white rounded-2xl shadow-xl p-8">
-                    <div className="text-center mb-8">
-                        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                            התחברות למערכת
-                        </h1>
-                        <p className="text-gray-600">
-                            נהל את דירת הנופש שלך
-                        </p>
-                    </div>
-
-                    {error && (
-                        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
-                            {error}
-                        </div>
-                    )}
-
-                    <form onSubmit={handleEmailAuth} className="space-y-4 mb-4">
-                        <input
-                            type="text"
-                            placeholder="שם משתמש"
-                            value={username}
-                            onChange={e => setUsername(e.target.value)}
-                            className="w-full border rounded-lg px-3 py-2 text-right"
-                            required
-                            autoComplete="username"
-                            minLength="3"
-                            maxLength="20"
-                        />
-                        <input
-                            type="password"
-                            placeholder="סיסמה"
-                            value={password}
-                            onChange={e => setPassword(e.target.value)}
-                            className="w-full border rounded-lg px-3 py-2 text-right"
-                            required
-                            autoComplete="current-password"
-                        />
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full bg-blue-600 text-white rounded-lg px-4 py-2 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-                        >
-                            {loading ? (isRegister ? 'נרשם...' : 'מתחבר...') : (isRegister ? 'הרשמה' : 'התחברות')}
-                        </button>
-                    </form>
-                    <div className="flex justify-between mb-4">
-                        <button
-                            type="button"
-                            className="text-sm text-blue-600 hover:underline"
-                            onClick={() => setIsRegister(!isRegister)}
-                        >
-                            {isRegister ? 'כבר רשום? התחבר' : 'אין לך חשבון? הרשם'}
-                        </button>
-                    </div>
-                    <div className="space-y-4">
-                        <button
-                            onClick={handleGoogleAuth}
-                            disabled={loading}
-                            className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-                        >
-                            <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5" />
-                            {loading ? 'מתחבר...' : 'התחבר עם Google'}
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <AuthForm
+            username={username}
+            setUsername={setUsername}
+            password={password}
+            setPassword={setPassword}
+            isRegister={isRegister}
+            setIsRegister={setIsRegister}
+            loading={loading}
+            error={error}
+            onSubmit={handleEmailAuth}
+            onSwitchToGoogle={() => setAuthMode('google')}
+        />
     );
 };
 

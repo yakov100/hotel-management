@@ -8,7 +8,6 @@ import Modal from '../components/common/Modal';
 import { addDoc, updateDoc, deleteDoc, doc, collection } from 'firebase/firestore';
 import { db, auth } from '../firebase/config';
 import { toDateSafe } from '../utils/dateUtils';
-import { useCollection } from '../hooks/useCollection';
 
 export default function BookingsView({
     bookings = [],
@@ -18,17 +17,18 @@ export default function BookingsView({
     onDelete,
     settings = null,
     currentProjectId = null,
-    onProjectSelect
+    onProjectSelect,
+    selectedApartment = null
 }) {
     const [viewMode, setViewMode] = useState('calendar');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState(null);
-    const [localError, setLocalError] = useState(null);
     const [duplicateModalOpen, setDuplicateModalOpen] = useState(false);
     
     const handleError = (error, message) => {
         console.error(error);
-        setLocalError(message || 'שגיאה בלתי צפויה');
+        // Display error in console only for now
+        console.error(message || 'שגיאה בלתי צפויה');
     };
 
     const handleEdit = (booking) => {
@@ -44,7 +44,6 @@ export default function BookingsView({
     const handleCloseModal = () => {
         setIsModalOpen(false);
         setSelectedBooking(null);
-        setLocalError(null);
     };
 
     // פונקציה לבדיקת חפיפה בין טווחי תאריכים
@@ -68,7 +67,7 @@ export default function BookingsView({
             checkOutTime: checkOutTimeStr,
             createdAt: new Date(),
             updatedAt: new Date(),
-            tenantId: auth.currentUser.uid
+            apartmentId: selectedApartment?.id
         };
         
         console.log('[BookingsView] נתונים לשמירה:', {
@@ -119,7 +118,7 @@ export default function BookingsView({
                         phone: bookingData.guestPhone,
                         email: bookingData.guestEmail,
                         notes: `נוצר אוטומטית מהזמנה - ${new Date().toLocaleDateString('he-IL')}`,
-                        tenantId: auth.currentUser.uid
+                        apartmentId: selectedApartment?.id
                     });
                     console.log('[BookingsView] אורח נוצר בהצלחה');
                 } catch (guestError) {
@@ -158,13 +157,7 @@ export default function BookingsView({
         setIsModalOpen(true);
     };
 
-    const handleBookingClick = (booking) => {
-        if (onProjectSelect) {
-            onProjectSelect(booking.id);
-        }
-        setSelectedBooking(booking);
-        setIsModalOpen(true);
-    };
+
 
     if (loading) {
         return (

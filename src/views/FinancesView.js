@@ -179,7 +179,7 @@ export default function FinancesView({ finances = [], onSave, onDelete }) {
             </div>
 
             {/* Finances List */}
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-white/20">
+            <div className="bg-white rounded-2xl shadow-lg overflow-auto border border-white/20">
                 <CrudList
                     items={finances}
                     onEdit={handleEdit}

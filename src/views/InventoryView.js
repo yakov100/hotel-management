@@ -105,7 +105,7 @@ export default function InventoryView({ inventory = [], onSave, onDelete }) {
             </div>
 
             {/* Inventory List */}
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-white/20">
+            <div className="bg-white rounded-2xl shadow-lg overflow-auto border border-white/20">
                 <CrudList
                     items={inventory}
                     onEdit={handleEdit}

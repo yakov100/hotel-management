@@ -21,7 +21,7 @@ const getStatusColor = (status) => {
 
 export default function TasksTable({ tasks, onEdit, onDelete }) {
     return (
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-white/20">
+        <div className="bg-white rounded-2xl shadow-lg overflow-auto border border-white/20">
             <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gradient-to-l from-blue-50 to-purple-50">
                     <tr>

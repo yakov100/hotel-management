@@ -60,7 +60,7 @@ exports.scheduleEmail = onCall(async (request) => {
       throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
     }
 
-    const { to, subject, html, scheduledTime, type, itemId, tenantId } = data;
+    const { to, subject, html, scheduledTime, type, itemId, apartmentId } = data;
 
     // Validate input
     if (!to || !subject || !html || !scheduledTime) {
@@ -75,7 +75,7 @@ exports.scheduleEmail = onCall(async (request) => {
       scheduledTime: admin.firestore.Timestamp.fromDate(new Date(scheduledTime)),
       type,
       itemId,
-      tenantId,
+      apartmentId,
       status: 'scheduled',
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       createdBy: request.auth.uid
