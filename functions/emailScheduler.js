@@ -24,27 +24,54 @@ const transporter = nodemailer.createTransport({
 });
 
 // Function to get all notification emails from settings
-const getAllNotificationEmails = async () => {
+const getAllNotificationEmails = async (apartmentId = null) => {
   try {
-    // Get settings from Firestore
-    const settingsDoc = await admin.firestore().collection('settings').doc('general').get();
-    const settings = settingsDoc.data() || {};
-    
     // Add main email and additional emails
     const emails = [gmailEmail]; // Default email
     
-    // Add main email from settings if exists
-    if (settings.email) {
-      emails.push(settings.email);
-    }
-    
-    // Add additional emails from settings
-    if (settings.additionalEmails && Array.isArray(settings.additionalEmails)) {
-      emails.push(...settings.additionalEmails);
+    // If apartmentId is provided, read settings from the apartment
+    if (apartmentId) {
+      const apartmentDoc = await admin.firestore().collection('apartments').doc(apartmentId).get();
+      if (apartmentDoc.exists) {
+        const apartmentData = apartmentDoc.data();
+        const settings = apartmentData.settings || {};
+        
+        console.log('Settings found for apartment (scheduler):', apartmentId, JSON.stringify(settings, null, 2));
+        
+        // Add main email from settings if exists
+        if (settings.email) {
+          emails.push(settings.email);
+          console.log('Added main email from settings (scheduler):', settings.email);
+        }
+        
+        // Add additional emails from settings
+        if (settings.additionalEmails && Array.isArray(settings.additionalEmails)) {
+          emails.push(...settings.additionalEmails);
+          console.log('Added additional emails from settings (scheduler):', settings.additionalEmails);
+        }
+      } else {
+        console.log('No apartment document found for ID (scheduler):', apartmentId);
+      }
+    } else {
+      // Fallback to old location for backward compatibility
+      const settingsDoc = await admin.firestore().collection('settings').doc('general').get();
+      const settings = settingsDoc.data() || {};
+      
+      // Add main email from settings if exists
+      if (settings.email) {
+        emails.push(settings.email);
+      }
+      
+      // Add additional emails from settings
+      if (settings.additionalEmails && Array.isArray(settings.additionalEmails)) {
+        emails.push(...settings.additionalEmails);
+      }
     }
     
     // Remove duplicates and empty emails
-    return [...new Set(emails.filter(email => email && email.trim()))];
+    const finalEmails = [...new Set(emails.filter(email => email && email.trim()))];
+    console.log('Final notification emails (scheduler):', finalEmails);
+    return finalEmails;
   } catch (error) {
     console.error('Error getting notification emails:', error);
     return [gmailEmail]; // Return default email in case of error
@@ -104,10 +131,10 @@ exports.sendEmail = onCall(async (request) => {
       throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
     }
 
-    const { to, subject, html } = data;
+    const { to, subject, html, apartmentId } = data;
 
     // Validate input
-    if (!to || !subject || !html) {
+    if (!subject || !html) {
       throw new functions.https.HttpsError('invalid-argument', 'Missing required fields');
     }
 
@@ -116,7 +143,7 @@ exports.sendEmail = onCall(async (request) => {
     // Get notification emails if recipients are empty or only contain default
     let finalRecipients = recipients;
     if (!recipients || recipients.length === 0) {
-      finalRecipients = await getAllNotificationEmails();
+      finalRecipients = await getAllNotificationEmails(apartmentId);
     }
     
     // Send email to each recipient
@@ -201,7 +228,7 @@ exports.processScheduledEmails = onSchedule('every 1 minutes', async (event) => 
         
         // Get notification emails if recipients are empty
         if (!recipients || recipients.length === 0) {
-          recipients = await getAllNotificationEmails();
+          recipients = await getAllNotificationEmails(emailData.apartmentId);
         }
         
         const emailPromises = recipients.map(email => {
@@ -239,10 +266,9 @@ exports.processScheduledEmails = onSchedule('every 1 minutes', async (event) => 
     console.log(`Processed ${query.docs.length} scheduled emails`);
 
     return null;
-
   } catch (error) {
     console.error('Error processing scheduled emails:', error);
-    return null;
+    throw error;
   }
 });
 

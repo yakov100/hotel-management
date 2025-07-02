@@ -87,7 +87,8 @@ export const sendImmediateEmail = async (type, data, tenantInfo) => {
     const result = await sendEmailFunction({
       to: recipients.length > 0 ? recipients : [], // Will be handled by emailScheduler to use default emails
       subject: subject,
-      html: emailContent
+      html: emailContent,
+      apartmentId: tenantInfo?.id
     });
     
     console.log('Email sent successfully:', result.data);

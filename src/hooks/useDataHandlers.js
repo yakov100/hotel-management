@@ -31,12 +31,19 @@ export function useDataHandlers(apartmentId, hasPermission) {
     const handleSettingsSave = useCallback((selectedApartment) => async (id, data) => {
         if (!apartmentId || !hasPermission('manage_settings')) return;
         try {
+            console.log('🏠 Saving apartment settings:');
+            console.log('- apartmentId:', apartmentId);
+            console.log('- settings data:', JSON.stringify(data, null, 2));
+            console.log('- selectedApartment:', JSON.stringify(selectedApartment, null, 2));
+            
             await setDoc(doc(db, 'apartments', apartmentId), {
                 ...selectedApartment,
                 settings: data
             }, { merge: true });
+            
+            console.log('✅ Settings saved successfully');
         } catch (e) {
-            console.error('Settings save error:', e);
+            console.error('❌ Settings save error:', e);
         }
     }, [apartmentId, hasPermission]);
 

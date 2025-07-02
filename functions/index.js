@@ -41,27 +41,54 @@ const transporter = nodemailer.createTransport({
 });
 
 // נוסיף פונקציית עזר חדשה בתחילת הקובץ
-const getAllNotificationEmails = async () => {
+const getAllNotificationEmails = async (apartmentId = null) => {
   try {
-    // קבלת ההגדרות מ-Firestore
-    const settingsDoc = await admin.firestore().collection('settings').doc('general').get();
-    const settings = settingsDoc.data() || {};
-    
-    // הוספת כתובת המייל הראשית וכתובות נוספות
+    // הוספת כתובת המייל הראשית כברירת מחדל
     const emails = [gmailEmail]; // כתובת ברירת המחדל
     
-    // הוספת האימייל הראשי מההגדרות אם קיים
-    if (settings.email) {
-      emails.push(settings.email);
-    }
-    
-    // הוספת כתובות נוספות מההגדרות
-    if (settings.additionalEmails && Array.isArray(settings.additionalEmails)) {
-      emails.push(...settings.additionalEmails);
+    // אם יש apartmentId, נקרא את ההגדרות מהדירה
+    if (apartmentId) {
+      const apartmentDoc = await admin.firestore().collection('apartments').doc(apartmentId).get();
+      if (apartmentDoc.exists) {
+        const apartmentData = apartmentDoc.data();
+        const settings = apartmentData.settings || {};
+        
+        console.log('Settings found for apartment:', apartmentId, JSON.stringify(settings, null, 2));
+        
+        // הוספת האימייל הראשי מההגדרות אם קיים
+        if (settings.email) {
+          emails.push(settings.email);
+          console.log('Added main email from settings:', settings.email);
+        }
+        
+        // הוספת כתובות נוספות מההגדרות
+        if (settings.additionalEmails && Array.isArray(settings.additionalEmails)) {
+          emails.push(...settings.additionalEmails);
+          console.log('Added additional emails from settings:', settings.additionalEmails);
+        }
+      } else {
+        console.log('No apartment document found for ID:', apartmentId);
+      }
+    } else {
+      // נסיון חזרה למיקום הישן (לתאימות לאחור)
+      const settingsDoc = await admin.firestore().collection('settings').doc('general').get();
+      const settings = settingsDoc.data() || {};
+      
+      // הוספת האימייל הראשי מההגדרות אם קיים
+      if (settings.email) {
+        emails.push(settings.email);
+      }
+      
+      // הוספת כתובות נוספות מההגדרות
+      if (settings.additionalEmails && Array.isArray(settings.additionalEmails)) {
+        emails.push(...settings.additionalEmails);
+      }
     }
     
     // הסרת כפילויות וכתובות ריקות
-    return [...new Set(emails.filter(email => email && email.trim()))];
+    const finalEmails = [...new Set(emails.filter(email => email && email.trim()))];
+    console.log('Final notification emails:', finalEmails);
+    return finalEmails;
   } catch (error) {
     console.error('שגיאה בקבלת כתובות מייל להתראות:', error);
     return [gmailEmail]; // במקרה של שגיאה, החזרת כתובת ברירת המחדל
@@ -70,7 +97,7 @@ const getAllNotificationEmails = async () => {
 
 exports.sendGuestEmail = onDocumentCreated("guests/{guestId}", async (event) => {
   const guest = event.data.data();
-  const notificationEmails = await getAllNotificationEmails();
+  const notificationEmails = await getAllNotificationEmails(guest.apartmentId);
   
   const mailOptions = {
     from: gmailEmail,
@@ -84,7 +111,7 @@ exports.sendGuestEmail = onDocumentCreated("guests/{guestId}", async (event) => 
 
 exports.sendBookingEmail = onDocumentCreated("bookings/{bookingId}", async (event) => {
   const booking = event.data.data();
-  const notificationEmails = await getAllNotificationEmails();
+  const notificationEmails = await getAllNotificationEmails(booking.apartmentId);
   
   // הדפסת המידע לדיבוג
   console.log('Booking data received:', JSON.stringify(booking, null, 2));
@@ -201,7 +228,7 @@ exports.sendBookingEmail = onDocumentCreated("bookings/{bookingId}", async (even
 
 exports.sendTaskEmail = onDocumentCreated("tasks/{taskId}", async (event) => {
   const task = event.data.data();
-  const notificationEmails = await getAllNotificationEmails();
+  const notificationEmails = await getAllNotificationEmails(task.apartmentId);
   
   const mailOptions = {
     from: gmailEmail,
@@ -215,7 +242,7 @@ exports.sendTaskEmail = onDocumentCreated("tasks/{taskId}", async (event) => {
 
 exports.sendReminderEmail = onDocumentCreated("reminders/{reminderId}", async (event) => {
   const reminder = event.data.data();
-  const notificationEmails = await getAllNotificationEmails();
+  const notificationEmails = await getAllNotificationEmails(reminder.apartmentId);
   
   const mailOptions = {
     from: gmailEmail,
