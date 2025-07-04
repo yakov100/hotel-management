@@ -71,7 +71,7 @@ export default function BookingsCalendar({ bookings, onEdit, onDelete, onDateCli
 
     if (!bookings?.length) {
         return (
-            <div className="p-8 text-center bg-white rounded-3xl shadow-sm border border-gray-100">
+            <div className="p-8 text-center bg-white/90 backdrop-blur-xl rounded-3xl shadow-lg border border-white/20">
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-purple-100 rounded-2xl mx-auto mb-4 flex items-center justify-center">
                     <CalendarIcon className="w-8 h-8 text-blue-400" />
                 </div>
@@ -82,12 +82,12 @@ export default function BookingsCalendar({ bookings, onEdit, onDelete, onDateCli
     }
 
     return (
-        <div className="p-4 bg-white rounded-3xl shadow-sm border border-gray-100">
+        <div className="p-4 bg-white/90 backdrop-blur-xl rounded-3xl shadow-lg border border-white/20">
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
                 <button
                     onClick={handlePrevMonth}
-                    className="w-10 h-10 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-xl border border-gray-200 transition-all duration-200 flex items-center justify-center hover:scale-105"
+                    className="w-10 h-10 bg-white/60 backdrop-blur-sm hover:bg-white/80 text-gray-600 rounded-xl border border-white/40 hover:border-blue-200 transition-all duration-200 flex items-center justify-center hover:scale-105 shadow-sm hover:shadow-md"
                 >
                     <span className="text-base font-medium">←</span>
                 </button>
@@ -96,23 +96,22 @@ export default function BookingsCalendar({ bookings, onEdit, onDelete, onDateCli
                 </h2>
                 <button
                     onClick={handleNextMonth}
-                    className="w-10 h-10 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-xl border border-gray-200 transition-all duration-200 flex items-center justify-center hover:scale-105"
+                    className="w-10 h-10 bg-white/60 backdrop-blur-sm hover:bg-white/80 text-gray-600 rounded-xl border border-white/40 hover:border-blue-200 transition-all duration-200 flex items-center justify-center hover:scale-105 shadow-sm hover:shadow-md"
                 >
                     <span className="text-base font-medium">→</span>
                 </button>
             </div>
 
             {/* Calendar Grid */}
-            <div className="bg-gradient-to-br from-stone-50 via-amber-50/30 to-orange-50/20 rounded-2xl p-4 relative overflow-hidden">
-                {/* Subtle texture overlay */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent opacity-40"></div>
-                <div className="absolute inset-0 bg-gradient-to-bl from-amber-50/20 via-transparent to-stone-100/30 opacity-50"></div>
+            <div className="bg-gradient-to-br from-blue-50/60 via-white to-purple-50/40 rounded-2xl p-4 relative overflow-hidden backdrop-blur-sm border border-white/30">
+                {/* Modern glass overlay */}
+                <div className="absolute inset-0 bg-white/20 backdrop-blur-sm opacity-60"></div>
                 <div className="relative z-10">
                     <div className="grid grid-cols-7 gap-3">
                         {/* Week Days */}
                         {weekDays.map((day) => (
-                            <div key={day} className="text-center py-2">
-                                <span className="text-sm font-medium text-gray-600">
+                            <div key={day} className="text-center py-2 px-1">
+                                <span className="week-day-header text-sm font-medium text-gray-600">
                                     {day}
                                 </span>
                             </div>
@@ -134,10 +133,13 @@ export default function BookingsCalendar({ bookings, onEdit, onDelete, onDateCli
                                     key={day.toString()}
                                     onClick={() => onDateClick(day)}
                                     className={`
-                                        relative min-h-[120px] p-3 rounded-2xl cursor-pointer transition-all duration-200 border-2
-                                        ${isCurrentMonth ? 'bg-white shadow-sm border-gray-300' : 'bg-gray-50 border-gray-400'}
-                                        ${isCurrentDay ? 'bg-blue-50 border-blue-400 shadow-md' : ''}
-                                        hover:shadow-md hover:scale-[1.02] hover:bg-white hover:border-gray-400
+                                        calendar-day-border relative min-h-[120px] p-3 rounded-2xl cursor-pointer transition-all duration-200 
+                                        ${isCurrentMonth 
+                                            ? 'bg-white/90 backdrop-blur-sm shadow-sm' 
+                                            : 'bg-gray-100/90 border-gray-300/60'
+                                        }
+                                        ${isCurrentDay ? 'current-day bg-gradient-to-br from-blue-50 to-purple-50 shadow-md' : ''}
+                                        hover:shadow-lg hover:scale-[1.02] hover:bg-white/95 hover:backdrop-blur-md
                                     `}
                                 >
                                     {/* Day Number */}
@@ -174,7 +176,7 @@ export default function BookingsCalendar({ bookings, onEdit, onDelete, onDateCli
                                             {dayNotes.map((note) => (
                                                 <div
                                                     key={note.id}
-                                                    className="text-xs p-1.5 rounded-lg bg-amber-50 text-amber-700 border border-amber-100"
+                                                    className="text-xs p-1.5 rounded-lg bg-blue-50/80 text-blue-700 border border-blue-200/60 backdrop-blur-sm"
                                                 >
                                                     <div className="truncate text-center">
                                                         {note.text}

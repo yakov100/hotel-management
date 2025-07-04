@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { formatDateTime, toDateSafe } from '../../utils/dateUtils';
 import { EditIcon, Trash2Icon, UserIcon, CalendarIcon, ClockIcon, NotebookIcon } from '../Icons';
 import Button from '../common/Button';
@@ -18,14 +19,23 @@ export default function BookingDetailsCard({ booking, isOpen, onClose, onEdit, o
         }
     };
 
-    return (
+    return createPortal(
         <div 
-            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[60] flex items-start justify-center pt-16 p-4"
             onClick={onClose}
+            style={{ 
+                zIndex: 9999,
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                transform: 'none'
+            }}
         >
             {/* Card */}
             <div 
-                className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto animate-scale-in border border-white/20 relative"
+                className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto animate-scale-in border border-white/20 relative"
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header */}
@@ -162,6 +172,7 @@ export default function BookingDetailsCard({ booking, isOpen, onClose, onEdit, o
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 } 
